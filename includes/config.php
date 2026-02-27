@@ -67,13 +67,71 @@ function sanitize(string $input): string {
 }
 
 // ── CSRF ──────────────────────────────────────────────────────────
-function csrfToken(): string {
+function generateCSRFToken(): string {
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
     return $_SESSION['csrf_token'];
 }
 
-function verifyCsrf(string $token): bool {
+function verifyCSRFToken(string $token): bool {
     return hash_equals($_SESSION['csrf_token'] ?? '', $token);
+}
+
+// Aliases for compatibility
+function csrfToken(): string { return generateCSRFToken(); }
+function verifyCsrf(string $token): bool { return verifyCSRFToken($token); }
+
+// ── Password helpers ──────────────────────────────────────────────
+function hashPassword(string $password): string {
+    return password_hash($password, PASSWORD_BCRYPT);
+}
+
+function verifyPassword(string $password, string $hash): bool {
+    return password_verify($password, $hash);
+}
+
+// ── Activity log ──────────────────────────────────────────────────
+function logActivity(string $action, string $entityType, $entityId, string $details = ''): void {
+    global $pdo;
+    try {
+        $userId = $_SESSION['user_id'] ?? null;
+        $ip     = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $stmt   = $pdo->prepare(
+            "INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details, ip_address, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())"
+        );
+        $stmt->execute([$userId, $action, $entityType, $entityId, $details, $ip]);
+    } catch (Exception $e) {
+        // Silently fail - don't break the app if logging fails
+        error_log('logActivity error: ' . $e->getMessage());
+    }
+}
+
+// ── File upload ───────────────────────────────────────────────────
+function uploadFile(array $file, string $folder = 'uploads'): array {
+    $uploadDir = __DIR__ . '/../uploads/' . $folder . '/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext     = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+    if (!in_array($ext, $allowed)) {
+        return ['success' => false, 'error' => 'Invalid file type'];
+    }
+
+    if ($file['size'] > 5 * 1024 * 1024) {
+        return ['success' => false, 'error' => 'File too large (max 5MB)'];
+    }
+
+    $filename = uniqid() . '_' . time() . '.' . $ext;
+    $dest     = $uploadDir . $filename;
+
+    if (move_uploaded_file($file['tmp_name'], $dest)) {
+        return ['success' => true, 'filename' => $filename, 'path' => $folder . '/' . $filename];
+    }
+
+    return ['success' => false, 'error' => 'Upload failed'];
 }

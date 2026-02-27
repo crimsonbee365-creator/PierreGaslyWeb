@@ -21,7 +21,7 @@ $revenue_data = $db->fetchAll("
     WHERE sale_date BETWEEN ? AND ?
     GROUP BY DATE(sale_date)
     ORDER BY date
-", []);
+", [$start_date, $end_date]);
 
 // Top Products
 $top_products = $db->fetchAll("
@@ -44,7 +44,7 @@ $top_riders = $db->fetchAll("
     GROUP BY s.rider_id
     ORDER BY deliveries DESC
     LIMIT 5
-", []);
+", [$start_date, $end_date]);
 
 // Top Customers
 $top_customers = $db->fetchAll("

@@ -21,7 +21,7 @@ $revenue_data = $db->fetchAll("
     WHERE sale_date BETWEEN ? AND ?
     GROUP BY DATE(sale_date)
     ORDER BY date
-", [$start_date, $end_date]);
+", []);
 
 // Top Products
 $top_products = $db->fetchAll("
@@ -29,11 +29,11 @@ $top_products = $db->fetchAll("
     FROM orders o
     JOIN products p ON o.product_id = p.product_id
     JOIN brands b ON p.brand_id = b.brand_id
-    WHERE o.order_status = 'delivered' AND o.delivered_at BETWEEN ? AND ?
+    WHERE o.order_status = 'delivered'
     GROUP BY p.product_id
     ORDER BY orders DESC
     LIMIT 5
-", [$start_date, $end_date]);
+", []);
 
 // Top Riders
 $top_riders = $db->fetchAll("
@@ -44,30 +44,29 @@ $top_riders = $db->fetchAll("
     GROUP BY s.rider_id
     ORDER BY deliveries DESC
     LIMIT 5
-", [$start_date, $end_date]);
+", []);
 
 // Top Customers
 $top_customers = $db->fetchAll("
-    SELECT c.full_name, COUNT(o.order_id) as orders, SUM(o.total_amount) as total_spent
+    SELECT u.full_name, COUNT(o.order_id) as orders, SUM(o.total_price) as total_spent
     FROM orders o
-    JOIN users cu ON o.customer_id = cu.user_id
-    LEFT JOIN customers c ON cu.user_id = c.user_id
-    WHERE o.order_status = 'delivered' AND o.delivered_at BETWEEN ? AND ?
+    JOIN users u ON o.customer_id = u.user_id
+    WHERE o.order_status = 'delivered'
     GROUP BY o.customer_id
     ORDER BY total_spent DESC
     LIMIT 5
-", [$start_date, $end_date]);
+", []);
 
 // Summary Stats
 $summary = $db->fetchOne("
     SELECT 
         COUNT(DISTINCT o.customer_id) as total_customers,
         COUNT(o.order_id) as total_orders,
-        SUM(o.total_amount) as total_revenue,
-        AVG(o.total_amount) as avg_order_value
+        COALESCE(SUM(o.total_price), 0) as total_revenue,
+        COALESCE(AVG(o.total_price), 0) as avg_order_value
     FROM orders o
-    WHERE o.order_status = 'delivered' AND o.delivered_at BETWEEN ? AND ?
-", [$start_date, $end_date]);
+    WHERE o.order_status = 'delivered'
+", []);
 
 include 'includes/header.php';
 ?>

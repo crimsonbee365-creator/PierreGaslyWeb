@@ -201,3 +201,62 @@ function uploadFile(array $file, string $folder = 'uploads'): array {
     }
     return ['success' => false, 'error' => 'Failed to move uploaded file'];
 }
+
+// ── Role helpers ──────────────────────────────────────────────────
+function isMasterAdmin(): bool {
+    return ($_SESSION['role'] ?? '') === 'master_admin';
+}
+
+function isSubAdmin(): bool {
+    return ($_SESSION['role'] ?? '') === 'sub_admin';
+}
+
+function isAdmin(): bool {
+    return in_array($_SESSION['role'] ?? '', ['master_admin', 'sub_admin']);
+}
+
+// ── Formatting helpers ────────────────────────────────────────────
+function formatCurrency(float|int|null $amount, string $symbol = '₱'): string {
+    return $symbol . number_format((float)($amount ?? 0), 2);
+}
+
+function formatDate(?string $date, string $format = 'M d, Y'): string {
+    if (!$date) return '—';
+    try { return (new DateTime($date))->format($format); }
+    catch (Exception $e) { return $date; }
+}
+
+function formatDateTime(?string $date, string $format = 'M d, Y h:i A'): string {
+    if (!$date) return '—';
+    try { return (new DateTime($date))->format($format); }
+    catch (Exception $e) { return $date; }
+}
+
+function formatStatus(string $status): string {
+    return ucwords(str_replace('_', ' ', $status));
+}
+
+function getStatusClass(string $status): string {
+    return match($status) {
+        'pending'          => 'status-pending',
+        'preparing'        => 'status-preparing',
+        'out_for_delivery' => 'status-delivery',
+        'delivered'        => 'status-delivered',
+        'cancelled'        => 'status-cancelled',
+        'active'           => 'status-active',
+        'inactive'         => 'status-inactive',
+        default            => 'status-default',
+    };
+}
+
+function timeAgo(?string $date): string {
+    if (!$date) return '—';
+    try {
+        $diff = (new DateTime())->diff(new DateTime($date));
+        if ($diff->days > 30) return formatDate($date);
+        if ($diff->days > 0)  return $diff->days . 'd ago';
+        if ($diff->h > 0)     return $diff->h . 'h ago';
+        if ($diff->i > 0)     return $diff->i . 'm ago';
+        return 'just now';
+    } catch (Exception $e) { return $date; }
+}

@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_sub_admin'])) {
             $error = implode('<br>', $validation_errors);
         } else {
             $password_hash = hashPassword($password);
-            $sql = "INSERT INTO users (full_name, email, password_hash, birthday, role, status, first_login) 
+            $sql = "INSERT INTO users (full_name, email, password_hash, birthday, role, status) 
                     VALUES (?, ?, ?, ?, 'sub_admin', 'active', 1)";
             if ($db->query($sql, [$full_name, $email, $password_hash, $birthday])) {
                 $success = "Sub Admin created successfully! Email: $email | Password: $password | PGAS Passkey: PGAS" . date('m-d-Y', strtotime($birthday));
@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_rider'])) {
             $temp_password = generateTempPassword();
             $password_hash = hashPassword($temp_password);
 
-            $sql = "INSERT INTO users (full_name, email, phone, address, birthday, password_hash, profile_photo, valid_id, role, status, first_login) 
+            $sql = "INSERT INTO users (full_name, email, phone, address, birthday, password_hash, profile_photo, valid_id, role, status) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'rider', 'active', 1)";
 
             if ($db->query($sql, [$full_name, $email, $phone, $address, $birthday, $password_hash, $profile_photo, $valid_id])) {
@@ -320,9 +320,7 @@ include 'includes/header.php';
                 <span class="badge badge-<?php echo $user['status'] == 'active' ? 'success' : 'danger'; ?>">
                     <?php echo ucfirst($user['status']); ?>
                 </span>
-                <?php if ($user['first_login'] && $user['role'] !== 'customer'): ?>
-                    <span class="badge badge-warning">First Login Pending</span>
-                <?php endif; ?>
+
             </p>
             <?php if ($user_type == 'rider' && $user['total_deliveries'] > 0): ?>
                 <p style="margin-top: 8px;">🚚 <strong><?php echo $user['total_deliveries']; ?></strong> deliveries completed</p>

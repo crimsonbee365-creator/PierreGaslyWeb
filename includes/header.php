@@ -4,9 +4,6 @@
  * Common header with sidebar navigation
  */
 
-if (!defined('BASE_PATH')) {
-    die('Direct access not permitted');
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -443,7 +440,7 @@ if (!defined('BASE_PATH')) {
                 <span class="nav-icon">📈</span>
                 <span>Reports</span>
             </a>
-            <?php if (isMasterAdmin()): ?>
+            <?php if (isAdmin()): ?>
 
             <a href="rewards.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'rewards.php' ? 'active' : ''; ?>">
                 <span class="nav-icon">🏆</span>

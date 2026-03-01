@@ -108,8 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_rider'])) {
             $temp_password = generateTempPassword();
             $password_hash = hashPassword($temp_password);
 
-            $sql = "INSERT INTO users (full_name, email, phone, address, birthday, password_hash, profile_photo, valid_id, role, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'rider', 'active', 1)";
+            $sql = "INSERT INTO users (full_name, email, phone, address, birthday, password_hash, profile_photo, valid_id, role, status, rider_availability) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'rider', 'active', 'standby')";
 
             if ($db->query($sql, [$full_name, $email, $phone, $address, $birthday, $password_hash, $profile_photo, $valid_id])) {
                 $success = "Rider created successfully!<br>Email: <strong>$email</strong><br>Temporary Password: <strong>$temp_password</strong><br>Please provide these credentials to the rider.";
@@ -320,6 +320,21 @@ include 'includes/header.php';
                 <span class="badge badge-<?php echo $user['status'] == 'active' ? 'success' : 'danger'; ?>">
                     <?php echo ucfirst($user['status']); ?>
                 </span>
+                <?php if ($user['role'] === 'rider'): ?>
+                <?php 
+                    $avail = $user['rider_availability'] ?? 'standby';
+                    $avail_badges = [
+                        'standby'          => ['color'=>'#22c55e','label'=>'🟢 Standby'],
+                        'out_for_delivery' => ['color'=>'#f59e0b','label'=>'🚚 Delivering'],
+                        'on_leave'         => ['color'=>'#8b5cf6','label'=>'🏖️ On Leave'],
+                        'off_duty'         => ['color'=>'#ef4444','label'=>'🔴 Off Duty'],
+                    ];
+                    $ab = $avail_badges[$avail] ?? $avail_badges['standby'];
+                ?>
+                <span class="badge" style="background:<?php echo $ab['color']; ?>;color:#fff;margin-left:4px;">
+                    <?php echo $ab['label']; ?>
+                </span>
+                <?php endif; ?>
 
             </p>
             <?php if ($user_type == 'rider' && $user['total_deliveries'] > 0): ?>
@@ -332,7 +347,7 @@ include 'includes/header.php';
         
         <div class="user-actions">
             <?php if ($user['role'] != 'master_admin' && isMasterAdmin()): ?>
-                <button onclick="updateStatus(<?php echo $user['user_id']; ?>, '<?php echo htmlspecialchars($user['full_name']); ?>', '<?php echo $user['status']; ?>')" 
+                <button onclick="updateStatus(<?php echo $user['user_id']; ?>, '<?php echo htmlspecialchars($user['full_name']); ?>', '<?php echo $user['status']; ?>', '<?php echo $user['role']; ?>', '<?php echo $user['rider_availability'] ?? 'standby'; ?>')" 
                         class="btn btn-sm <?php echo $user['status'] == 'active' ? 'btn-warning' : 'btn-primary'; ?>">
                     <?php echo $user['status'] == 'active' ? '🔒 Suspend' : '✅ Activate'; ?>
                 </button>
@@ -466,15 +481,15 @@ include 'includes/header.php';
                     </div>
                     
                     <div class="form-group form-group-full">
-                        <label>Valid ID</label>
-                        <input type="file" name="valid_id" accept="image/*,application/pdf" class="form-control"
+                        <label>Driver's License</label>
+                        <input type="file" name="valid_id" accept="image/*,application/pdf"  class="form-control"
                                id="validId" onchange="previewImage(this,'validIdPreview')">
                     </div>
 
                     <div class="form-group form-group-full">
                         <div id="validIdPreview" class="image-preview-container">
                             <div class="image-preview-header">
-                                <span>🪪 Valid ID Preview</span>
+                                <span>🪪 Driver's License Preview</span>
                                 <button type="button" class="remove-preview-btn"
                                         onclick="removePreview('validId','validIdPreview')">✕ Remove</button>
                             </div>
@@ -511,11 +526,23 @@ include 'includes/header.php';
                 
                 <div class="form-group">
                     <label>New Status *</label>
-                    <select name="new_status" required class="form-control" id="status_select">
-                        <option value="active">Active</option>
-                        <option value="suspended">Suspended</option>
-                        <option value="banned">Banned</option>
-                    </select>
+                    <div id="account_status_section">
+                        <label>Account Status</label>
+                        <select name="new_status" class="form-control" id="status_select">
+                            <option value="active">✅ Active</option>
+                            <option value="suspended">🔒 Suspended</option>
+                            <option value="banned">🚫 Banned</option>
+                        </select>
+                    </div>
+                    <div id="rider_availability_section" style="margin-top:15px;display:none;">
+                        <label>Rider Availability</label>
+                        <select name="new_availability" class="form-control" id="availability_select">
+                            <option value="standby">🟢 Standby (Available)</option>
+                            <option value="out_for_delivery">🚚 Out for Delivery</option>
+                            <option value="on_leave">🏖️ On Leave</option>
+                            <option value="off_duty">🔴 Off Duty</option>
+                        </select>
+                    </div>
                 </div>
             </form>
         </div>

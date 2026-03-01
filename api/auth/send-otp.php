@@ -6,6 +6,9 @@
 
 require_once __DIR__ . '/../api_config.php';
 
+// Ensure OTP table exists
+ensureOtpTable();
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     sendError('Method not allowed', 405);
 }

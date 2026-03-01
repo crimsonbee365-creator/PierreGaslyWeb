@@ -72,6 +72,23 @@ function isValidEmail(string $email): bool {
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
+function isValidPhone(string $phone): bool {
+    // Philippine format: 09XXXXXXXXX (11 digits)
+    return preg_match('/^09\d{9}$/', $phone) === 1;
+}
+
+function validateRequired(array $data, array $required): void {
+    foreach ($required as $field) {
+        if (!isset($data[$field]) || trim($data[$field]) === '') {
+            sendError("Field '$field' is required");
+        }
+    }
+}
+
+function generateOTP(int $length = 6): string {
+    return str_pad((string)random_int(0, (10 ** $length) - 1), $length, '0', STR_PAD_LEFT);
+}
+
 // ── JWT ───────────────────────────────────────────────────────────
 function base64url(string $data): string {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
@@ -119,7 +136,7 @@ function ensureOtpTable(): void {
                 phone       VARCHAR(20) NOT NULL,
                 otp_code    VARCHAR(10) NOT NULL,
                 expires_at  DATETIME    NOT NULL,
-                used        TINYINT(1)  DEFAULT 0,
+                verified    TINYINT(1)  DEFAULT 0,
                 created_at  TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
                 INDEX (phone),
                 INDEX (expires_at)

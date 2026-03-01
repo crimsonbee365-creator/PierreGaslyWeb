@@ -178,12 +178,12 @@ function logActivity(string $action, string $entityType, $entityId, string $deta
 }
 
 // ── File upload ───────────────────────────────────────────────────
-function uploadFile(array $file, string $folder = 'uploads'): array {
+function uploadFile(array $file, string $folder = 'uploads', array $allowedTypes = ['jpg','jpeg','png','gif','webp']): array {
     $uploadDir = UPLOAD_PATH . $folder . '/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
-    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $allowed = $allowedTypes;
     $ext     = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, $allowed)) {
         return ['success' => false, 'error' => 'Invalid file type. Allowed: jpg, jpeg, png, gif, webp'];
@@ -259,4 +259,18 @@ function timeAgo(?string $date): string {
         if ($diff->i > 0)     return $diff->i . 'm ago';
         return 'just now';
     } catch (Exception $e) { return $date; }
+}
+
+// ── Upload type constants ─────────────────────────────────────────
+define('ALLOWED_IMAGE_TYPES', ['jpg','jpeg','png','gif','webp']);
+define('ALLOWED_DOC_TYPES',   ['jpg','jpeg','png','gif','webp','pdf']);
+
+// ── Temp password generator ───────────────────────────────────────
+function generateTempPassword(int $length = 10): string {
+    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+    $pass  = '';
+    for ($i = 0; $i < $length; $i++) {
+        $pass .= $chars[random_int(0, strlen($chars) - 1)];
+    }
+    return $pass;
 }
